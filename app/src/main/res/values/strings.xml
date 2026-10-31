@@ -1,5 +1,4 @@
 
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="accessibility_name">BeastE Keyboard Listener</string>
     <string name="accessibility_description">Detects selected physical keyboard keys while BeastE Macro is enabled.</string>
