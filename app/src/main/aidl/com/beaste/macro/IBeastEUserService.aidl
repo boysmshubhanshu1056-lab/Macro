@@ -1,8 +1,7 @@
-
 package com.beaste.macro;
 
 interface IBeastEUserService {
-    boolean sendKey(String keyCode);
     boolean ping();
+    boolean tapKey(int keyCode, long eventTime);
     void stop();
 }
