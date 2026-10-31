@@ -1,10 +1,10 @@
-
 package com.beaste.macro
 
 import android.content.ComponentName
 import android.content.ServiceConnection
-import android.os.IBinder
 import android.content.pm.PackageManager
+import android.os.IBinder
+import android.os.SystemClock
 import rikka.shizuku.Shizuku
 
 object ShizukuController {
@@ -16,6 +16,7 @@ object ShizukuController {
     var connected = false
         private set
 
+    @Volatile
     private var bound = false
 
     private val args by lazy {
@@ -27,7 +28,7 @@ object ShizukuController {
         )
             .daemon(false)
             .tag("beaste-input-service")
-            .version(1)
+            .version(2)
             .processNameSuffix("beaste_shizuku")
     }
 
@@ -37,7 +38,9 @@ object ShizukuController {
             name: ComponentName?,
             service: IBinder?
         ) {
-            remote = IBeastEUserService.Stub.asInterface(service)
+            val binder = service ?: return
+
+            remote = IBeastEUserService.Stub.asInterface(binder)
 
             connected = try {
                 remote?.ping() == true
@@ -49,6 +52,7 @@ object ShizukuController {
         override fun onServiceDisconnected(name: ComponentName?) {
             remote = null
             connected = false
+            bound = false
         }
     }
 
@@ -62,6 +66,7 @@ object ShizukuController {
         }
     }
 
+    @Synchronized
     fun bind(): Boolean {
         if (!hasPermission()) return false
 
@@ -72,19 +77,24 @@ object ShizukuController {
             }
             true
         } catch (_: Exception) {
+            bound = false
             false
         }
     }
 
-    fun send(keyCode: String): Boolean {
+    fun tap(keyCode: Int): Boolean {
         return try {
-            remote?.sendKey(keyCode) == true
+            remote?.tapKey(
+                keyCode,
+                SystemClock.uptimeMillis()
+            ) == true
         } catch (_: Exception) {
             connected = false
             false
         }
     }
 
+    @Synchronized
     fun unbind() {
         try {
             remote?.stop()
