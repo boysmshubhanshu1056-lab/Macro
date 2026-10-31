@@ -1,23 +1,32 @@
 
 package com.beaste.macro
 
+import android.os.Parcel
 import android.util.Log
 import java.util.concurrent.TimeUnit
 
 class BeastEUserService : IBeastEUserService.Stub() {
 
-    private val allowedKeys = setOf(
-        "KEYCODE_R",
-        "KEYCODE_Z",
-        "KEYCODE_X",
-        "KEYCODE_C",
-        "KEYCODE_V"
-    )
+    companion object {
+        private const val TRANSACTION_DESTROY = 16777115
 
-    override fun ping(): Boolean = true
+        private val ALLOWED_KEYS = setOf(
+            "KEYCODE_R",
+            "KEYCODE_Z",
+            "KEYCODE_X",
+            "KEYCODE_C",
+            "KEYCODE_V"
+        )
+    }
+
+    override fun ping(): Boolean {
+        return true
+    }
 
     override fun sendKey(keyCode: String): Boolean {
-        if (keyCode !in allowedKeys) return false
+        if (keyCode !in ALLOWED_KEYS) {
+            return false
+        }
 
         return try {
             val process = Runtime.getRuntime().exec(
@@ -37,16 +46,34 @@ class BeastEUserService : IBeastEUserService.Stub() {
             }
 
         } catch (error: Exception) {
-            Log.e("BeastE", "Input failed", error)
+            Log.e("BeastEUserService", "Input failed", error)
             false
         }
     }
 
     override fun stop() {
-        // No persistent key-down is held.
+        // No persistent key-down state is maintained.
     }
 
-    override fun destroy() {
-        System.exit(0)
+    override fun onTransact(
+        code: Int,
+        data: Parcel,
+        reply: Parcel?,
+        flags: Int
+    ): Boolean {
+        if (code == TRANSACTION_DESTROY) {
+            destroyService()
+            return true
+        }
+
+        return super.onTransact(code, data, reply, flags)
+    }
+
+    private fun destroyService() {
+        try {
+            stop()
+        } finally {
+            System.exit(0)
+        }
     }
 }
