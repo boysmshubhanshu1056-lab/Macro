@@ -1,3 +1,4 @@
+
 package com.beaste.macro
 
 import android.hardware.input.InputManager
@@ -5,6 +6,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.InputDevice
 import android.view.InputEvent
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
 
 class BeastEUserService : IBeastEUserService.Stub() {
@@ -30,15 +32,15 @@ class BeastEUserService : IBeastEUserService.Stub() {
             .getDeclaredMethod("getInstance")
             .invoke(null)
 
-        managerClass.getDeclaredMethod(
+        val method = managerClass.getDeclaredMethod(
             "injectInputEvent",
             InputEvent::class.java,
             Int::class.javaPrimitiveType
         ).apply {
             isAccessible = true
-        }.let { method ->
-            Pair(instance, method)
         }
+
+        Pair(instance, method)
     }
 
     override fun ping(): Boolean = true
@@ -61,7 +63,7 @@ class BeastEUserService : IBeastEUserService.Stub() {
                 keyCode,
                 0,
                 0,
-                KeyEvent.VIRTUAL_KEYBOARD,
+                KeyCharacterMap.VIRTUAL_KEYBOARD,
                 0,
                 KeyEvent.FLAG_FROM_SYSTEM,
                 InputDevice.SOURCE_KEYBOARD
@@ -74,13 +76,14 @@ class BeastEUserService : IBeastEUserService.Stub() {
                 keyCode,
                 0,
                 0,
-                KeyEvent.VIRTUAL_KEYBOARD,
+                KeyCharacterMap.VIRTUAL_KEYBOARD,
                 0,
                 KeyEvent.FLAG_FROM_SYSTEM,
                 InputDevice.SOURCE_KEYBOARD
             )
 
             inject(down) && inject(up)
+
         } catch (error: Throwable) {
             Log.e(TAG, "Key injection failed", error)
             false
@@ -89,6 +92,7 @@ class BeastEUserService : IBeastEUserService.Stub() {
 
     private fun inject(event: InputEvent): Boolean {
         val (instance, method) = inputManager
+
         return method.invoke(
             instance,
             event,
@@ -97,7 +101,6 @@ class BeastEUserService : IBeastEUserService.Stub() {
     }
 
     override fun stop() {
-        // Each tap sends its own DOWN and UP pair.
-        // No key is intentionally left held.
+        // Every tap sends its own DOWN and UP event.
     }
 }
